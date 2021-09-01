@@ -1,37 +1,47 @@
-"use strict";
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 5000;
+const cors = require('cors')
+const timeout = require('connect-timeout');
+var emoji = require('node-emoji');
 
-var express = require('express');
-var path = require('path');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+app.use(cors()); // this will Enable All CORS Requests 
+app.use(timeout('5s'));
+app.listen(port, () => console.log(`Listening on port ${port}`));
 
-var app = express();
+const STATE = [
+  'online',
+  'offline',
+  'timeout',
+  'error'
+]
 
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
+// create a GET route
+app.get('/status', (req, res) => {
+  // res.send({ express: 'YOUR EXPRESS BACKEND IS CONNECTED TO REACT' });
+  const currentStatus = STATE[Math.floor(Math.random()*STATE.length)]
 
-app.use(express.static(path.join(__dirname, 'public')));
+  if (currentStatus !== 'timeout') {
+    if (currentStatus === 'error') {
+      return res.status(500).send({
+        status: currentStatus,
+        ...emoji.random(),
+      })
+    }
 
-var router = express.Router();
+    if (Math.floor(Math.random()*2) === 0) {
+      return res.send({
+        status: currentStatus,
+        ...emoji.random(),
+      })
+    }
 
-function online(res) {
-  res.status(200).json({status: 'online'});
-}
-function offline(res) {
-  res.status(200).json({status: 'offline'});
-}
-function none(res) { }
+    setTimeout(() => {
+      res.send({
+        status: currentStatus,
+        ...emoji.random(),
+      })
+    }, 3000);
+  }
 
-var states = [online, offline, none];
-
-router.get('/server', function (req, res, next) {
-  var index = Math.floor(Math.random()*3);
-  states[index](res);
-})
-
-app.use(router);
-
-module.exports = app;
+});
